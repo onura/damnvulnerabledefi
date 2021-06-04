@@ -4,11 +4,6 @@ import { expect } from "chai";
 
 
 
-
-let DamnValuableToken: Contract; 
-let UnstoppableLender: Contract; 
-let ReceiverContract: Contract; 
-
 describe('[Challenge] Unstoppable', function () {
     this.timeout(0);
 
