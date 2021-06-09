@@ -1,6 +1,6 @@
-import { HardhatUserConfig } from "hardhat/types";
+import "@nomiclabs/hardhat-ethers";
 import "@nomiclabs/hardhat-waffle";
-
+import { HardhatUserConfig } from "hardhat/types";
 
 const config: HardhatUserConfig = {
   solidity: {
