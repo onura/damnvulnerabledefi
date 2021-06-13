@@ -36,7 +36,7 @@ contract SelfiePoolExp {
     // second part: queue the action, I chose a wei amount which should be enough for gas price.
     /*
      * I give a random wei to queAction at first and spent some time to figure out how should
-     * I call a nonpayable function with value. Then I find out I can just call it with 0 wei :/  
+     * I call a nonpayable function with value. Then I find out I can just call it with 0 wei :/j  
      */
     function queAction(address eoa) public returns (uint256) {
         actionId = simpleGov.queueAction(
