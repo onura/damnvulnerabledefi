@@ -11,6 +11,9 @@ const config: HardhatUserConfig = {
   },
   networks: {
     hardhat: {
+      accounts: {
+        accountsBalance: '20000000000000000000000',
+      }
     },
   },
 };
