@@ -1,6 +1,7 @@
 import "@nomiclabs/hardhat-ethers";
 import "@nomiclabs/hardhat-waffle";
 import { HardhatUserConfig } from "hardhat/types";
+import "hardhat-dependency-compiler";
 
 const config: HardhatUserConfig = {
   solidity: {
@@ -12,11 +13,18 @@ const config: HardhatUserConfig = {
   },
   networks: {
     hardhat: {
+      allowUnlimitedContractSize: true,
       accounts: {
         accountsBalance: '20000000000000000000000',
       }
     },
   },
+  dependencyCompiler: {
+    paths: [
+      '@gnosis.pm/safe-contracts/contracts/GnosisSafe.sol',
+      '@gnosis.pm/safe-contracts/contracts/proxies/GnosisSafeProxyFactory.sol',
+    ],
+  }
 };
 
 export default config;

