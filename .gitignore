@@ -2,6 +2,7 @@
 /.vscode/
 /cache/
 /artifacts/
+.openzeppelin/
 
 .DS_Store
 package-lock.json

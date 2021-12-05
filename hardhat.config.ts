@@ -1,5 +1,6 @@
 import "@nomiclabs/hardhat-ethers";
 import "@nomiclabs/hardhat-waffle";
+import '@openzeppelin/hardhat-upgrades';
 import { HardhatUserConfig } from "hardhat/types";
 import "hardhat-dependency-compiler";
 
